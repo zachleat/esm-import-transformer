@@ -31,3 +31,9 @@ let outputCode = it.transform(sourceCode, {
   }
 });
 ```
+
+## Installation
+
+```
+npm install esm-import-transformer
+```
