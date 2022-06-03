@@ -1,6 +1,6 @@
 # esm-import-transformer
 
-Can transform any ESM source code `import` URLs using an import maps object. Works in ES modules or in CJS.
+Can transform any ESM source code `import` URLs using an import maps object. This package works in ES modules or in CJS.
 
 ```js
 // Before
