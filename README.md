@@ -34,6 +34,8 @@ let outputCode = it.transform(sourceCode, importMap);
 
 ## Installation
 
+Available on [npm](https://www.npmjs.com/package/esm-import-transformer)
+
 ```
 npm install esm-import-transformer
 ```
