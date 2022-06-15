@@ -22,7 +22,7 @@ import { ImportTransformer } from "esm-import-transformer";
 
 let it = new ImportTransformer();
 
-let inputCode = `import {html, css, LitElement} from "lit";`;
+let sourceCode = `import {html, css, LitElement} from "lit";`;
 let importMap = {
   imports: {
     lit: "https://cdn.jsdelivr.net/gh/lit/dist@2/core/lit-core.min.js"
