@@ -48,7 +48,7 @@ let it = new ImportTransformer();
 let inputCode = `import {html, css, LitElement} from "lit";`;
 
 let outputCode = it.transformToDynamicImport(sourceCode);
-// returns: `const {html, css, LitElement} = require("lit");`
+// returns: `const {html, css, LitElement} = await import("lit");`
 ```
 
 ## Installation
