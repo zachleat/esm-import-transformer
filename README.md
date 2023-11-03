@@ -27,27 +27,25 @@ import { ImportTransformer } from "esm-import-transformer";
 Pass in a source code string and an [import maps](https://github.com/WICG/import-maps) object.
 
 ```js
-let it = new ImportTransformer();
-
 let sourceCode = `import {html, css, LitElement} from "lit";`;
+let it = new ImportTransformer(sourceCode);
+
 let importMap = {
   imports: {
     lit: "https://cdn.jsdelivr.net/gh/lit/dist@2/core/lit-core.min.js"
   }
 };
-
-let outputCode = it.transformWithImportMap(sourceCode, importMap);
+let outputCode = it.transformWithImportMap(importMap);
 // returns: `import {html, css, LitElement} from "https://cdn.jsdelivr.net/gh/lit/dist@2/core/lit-core.min.js";`
 ```
 
 ### Transform to dynamic `import()`
 
 ```js
-let it = new ImportTransformer();
+let sourceCode = `import {html, css, LitElement} from "lit";`;
+let it = new ImportTransformer(sourceCode);
 
-let inputCode = `import {html, css, LitElement} from "lit";`;
-
-let outputCode = it.transformToDynamicImport(sourceCode);
+let outputCode = it.transformToDynamicImport();
 // returns: `const {html, css, LitElement} = await import("lit");`
 ```
 

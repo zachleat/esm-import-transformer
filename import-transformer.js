@@ -1,7 +1,28 @@
 import * as acorn from "acorn";
 
 export class ImportTransformer {
-  transformImportSource(str, sourceNode, indexOffset = 0, importMap = {}) {
+  constructor(input, ast) {
+    this.parse(input, ast);
+  }
+
+  parse(input, ast) {
+    if(!input) {
+      throw new Error("Missing input to ImportTransformer, received: " + input)
+    }
+
+    this.originalSource = input;
+
+    if(ast) {
+      this.ast = ast;
+    } else {
+      this.ast = acorn.parse(input, {
+        sourceType: "module",
+        ecmaVersion: "latest"
+      });
+    }
+  }
+
+  static transformImportSource(str, sourceNode, indexOffset = 0, importMap = {}) {
     let { start, end, value } = sourceNode;
     // Could be improved by https://www.npmjs.com/package/@import-maps/resolve
     let resolved = importMap?.imports && importMap?.imports[value];
@@ -17,7 +38,7 @@ export class ImportTransformer {
     };
   }
 
-  transformImportCode(str, node, specifiers, sourceNode, indexOffset = 0) {
+  static transformImportCode(str, node, specifiers, sourceNode, indexOffset = 0) {
     let { start, end } = node;
     start += indexOffset;
     end += indexOffset;
@@ -50,16 +71,12 @@ export class ImportTransformer {
     };
   }
 
-  transformToDynamicImport(input) {
-    let ast = acorn.parse(input, {
-      sourceType: "module",
-      ecmaVersion: "latest"
-    });
-
+  transformToDynamicImport() {
+    let input = this.originalSource;
     let indexOffset = 0;
-    for(let node of ast.body) {
+    for(let node of this.ast.body) {
       if(node.type === "ImportDeclaration") {
-        let ret = this.transformImportCode(input, node, node.specifiers, node.source, indexOffset)
+        let ret = ImportTransformer.transformImportCode(input, node, node.specifiers, node.source, indexOffset)
         input = ret.code;
         indexOffset += ret.offset;
       }
@@ -73,21 +90,17 @@ export class ImportTransformer {
     return this.transformWithImportMap(...args);
   }
 
-  transformWithImportMap(input, importMap) {
+  transformWithImportMap(importMap) {
     if(!importMap) {
-      return input;
+      return this.originalSource;
     }
 
-    let ast = acorn.parse(input, {
-      sourceType: "module",
-      ecmaVersion: "latest"
-    });
-
+    let input = this.originalSource;
     let indexOffset = 0;
-    for(let node of ast.body) {
+    for(let node of this.ast.body) {
       if(node.type === "ImportDeclaration") {
         if(importMap?.imports) {
-          let ret = this.transformImportSource(input, node.source, indexOffset, importMap);
+          let ret = ImportTransformer.transformImportSource(input, node.source, indexOffset, importMap);
           input = ret.code;
           indexOffset += ret.offset;
         }
