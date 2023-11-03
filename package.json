@@ -4,13 +4,6 @@
   "description": "Transform ESM import URLs from bare modules to full URLs using import maps.",
   "type": "module",
   "main": "./import-transformer.js",
-  "exports": {
-    "require": "./import-transformer.cjs",
-    "import": "./import-transformer.js"
-  },
-  "scripts": {
-    "prepare": "esbuild import-transformer.js --format=cjs --platform=node --outfile=import-transformer.cjs"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/zachleat/esm-import-transformer.git"
@@ -22,10 +15,9 @@
   },
   "license": "MIT",
   "dependencies": {
-    "acorn": "^8.7.1"
+    "acorn": "^8.11.2"
   },
   "devDependencies": {
-    "ava": "^4.3.0",
-    "esbuild": "^0.14.42"
+    "ava": "^5.3.1"
   }
 }

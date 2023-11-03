@@ -1,25 +1,32 @@
 # esm-import-transformer
 
-Can transform any ESM source code `import` URLs using an import maps object. This package works in ES modules or in CJS.
+Can transform any ESM source code `import` URLs using an import maps object. This package works in ESM or CJS.
 
 ```js
-// Before
+// Input source code:
 import {html, css, LitElement} from "lit";
 
-// After
+// Transform with an import map:
 import {html, css, LitElement} from "https://cdn.jsdelivr.net/gh/lit/dist@2/core/lit-core.min.js";
+
+// Or transform to a dynamic import:
+const {html, css, LitElement} = await import("lit");
 ```
 
 ## Usage
-
-Pass in a source code string and an [import maps](https://github.com/WICG/import-maps) object.
 
 ```js
 import { ImportTransformer } from "esm-import-transformer";
 
 // or CJS:
-// const { ImportTransformer } = require("esm-import-transformer");
+// const { ImportTransformer } = await import("esm-import-transformer");
+```
 
+### Transform with an import map
+
+Pass in a source code string and an [import maps](https://github.com/WICG/import-maps) object.
+
+```js
 let it = new ImportTransformer();
 
 let inputCode = `import {html, css, LitElement} from "lit";`;
@@ -29,7 +36,19 @@ let importMap = {
   }
 };
 
-let outputCode = it.transform(sourceCode, importMap);
+let outputCode = it.transformWithImportMap(sourceCode, importMap);
+// returns: `import {html, css, LitElement} from "https://cdn.jsdelivr.net/gh/lit/dist@2/core/lit-core.min.js";`
+```
+
+### Transform to dynamic `import()`
+
+```js
+let it = new ImportTransformer();
+
+let inputCode = `import {html, css, LitElement} from "lit";`;
+
+let outputCode = it.transformToDynamicImport(sourceCode);
+// returns: `const {html, css, LitElement} = require("lit");`
 ```
 
 ## Installation
