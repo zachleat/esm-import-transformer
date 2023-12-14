@@ -158,3 +158,46 @@ test.skip("Change to dynamic import with namespace", t => {
 
   t.is(tf.transformToDynamicImport(), after);
 });
+
+test("Change to require (default)", t => {
+  let before = `import noop from "@zachleat/noop";`;
+  let tf = new ImportTransformer(before);
+
+  let after = `const noop = require("@zachleat/noop");`;
+
+  t.is(tf.transformToRequire(), after);
+});
+
+
+test("Change to require (destructured)", t => {
+  let before = `import { html, css, LitElement } from "lit";`;
+  let tf = new ImportTransformer(before);
+
+  let after = `const { html, css, LitElement } = require("lit");`;
+
+  t.is(tf.transformToRequire(), after);
+});
+
+test("Change to require (multiple)", t => {
+  let before = `import { html, css, LitElement } from "lit";
+import noop from "@zachleat/noop";`;
+  let tf = new ImportTransformer(before);
+
+  let after = `const { html, css, LitElement } = require("lit");
+const noop = require("@zachleat/noop");`;
+
+  t.is(tf.transformToRequire(), after);
+});
+
+test("Change to require (multiple ×3)", t => {
+  let before = `import { html, css, LitElement } from "lit";
+import noop from "@zachleat/noop";
+import noop2 from "@zachleat/noop";`;
+  let tf = new ImportTransformer(before);
+
+  let after = `const { html, css, LitElement } = require("lit");
+const noop = require("@zachleat/noop");
+const noop2 = require("@zachleat/noop");`;
+
+  t.is(tf.transformToRequire(), after);
+});

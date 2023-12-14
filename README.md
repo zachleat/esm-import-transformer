@@ -49,6 +49,17 @@ let outputCode = it.transformToDynamicImport();
 // returns: `const {html, css, LitElement} = await import("lit");`
 ```
 
+### Transform to `require()` (package must be CJS)
+
+```js
+let sourceCode = `import {html, css, LitElement} from "lit";`;
+let it = new ImportTransformer(sourceCode);
+
+let outputCode = it.transformToRequire();
+// returns: `const {html, css, LitElement} = require("lit");`
+```
+
+
 ## Installation
 
 Available on [npm](https://www.npmjs.com/package/esm-import-transformer)

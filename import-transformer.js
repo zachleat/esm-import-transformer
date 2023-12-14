@@ -38,7 +38,7 @@ export class ImportTransformer {
     };
   }
 
-  static transformImportCode(str, node, specifiers, sourceNode, indexOffset = 0) {
+  static transformImportCode(prefix, str, node, specifiers, sourceNode, indexOffset = 0) {
     let { start, end } = node;
     start += indexOffset;
     end += indexOffset;
@@ -62,7 +62,7 @@ export class ImportTransformer {
       specifierIndexes[1] += split[0].length;
     }
 
-    let newImportString = `const ${str.slice(specifierIndexes[0], specifierIndexes[1])} = await import(${rawSourceValue})`;
+    let newImportString = `const ${str.slice(specifierIndexes[0], specifierIndexes[1])} = ${prefix}(${rawSourceValue})`;
     let returnedCode = str.slice(0, start) + newImportString + str.slice(end - 1);
 
     return {
@@ -71,18 +71,26 @@ export class ImportTransformer {
     };
   }
 
-  transformToDynamicImport() {
+  _transform(prefix) {
     let input = this.originalSource;
     let indexOffset = 0;
     for(let node of this.ast.body) {
       if(node.type === "ImportDeclaration") {
-        let ret = ImportTransformer.transformImportCode(input, node, node.specifiers, node.source, indexOffset)
+        let ret = ImportTransformer.transformImportCode(prefix, input, node, node.specifiers, node.source, indexOffset)
         input = ret.code;
         indexOffset += ret.offset;
       }
     }
 
     return input;
+  }
+
+  transformToDynamicImport() {
+    return this._transform("await import");
+  }
+
+  transformToRequire() {
+    return this._transform("require");
   }
 
   // alias for backwards compat
