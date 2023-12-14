@@ -11,15 +11,19 @@ import {html, css, LitElement} from "https://cdn.jsdelivr.net/gh/lit/dist@2/core
 
 // Or transform to a dynamic import:
 const {html, css, LitElement} = await import("lit");
+
+// Or transform to CommonJS require:
+const {html, css, LitElement} = require("lit");
 ```
 
 ## Usage
 
 ```js
+// ESM
 import { ImportTransformer } from "esm-import-transformer";
 
-// or CJS:
-// const { ImportTransformer } = await import("esm-import-transformer");
+// or CJS
+const { ImportTransformer } = await import("esm-import-transformer");
 ```
 
 ### Transform with an import map
