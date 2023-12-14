@@ -49,7 +49,9 @@ let outputCode = it.transformToDynamicImport();
 // returns: `const {html, css, LitElement} = await import("lit");`
 ```
 
-### Transform to `require()` (package must be CJS)
+### Transform to `require()`
+
+This method does not require that the downstream package is CommonJS, but just know that code will fail if you try to run it on a package that is not CommonJS.
 
 ```js
 let sourceCode = `import {html, css, LitElement} from "lit";`;
