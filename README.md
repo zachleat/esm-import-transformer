@@ -65,6 +65,22 @@ let outputCode = it.transformToRequire();
 // returns: `const {html, css, LitElement} = require("lit");`
 ```
 
+### Has imports?
+
+_Added in v3.0.2_ Returns true if the code has any top level `import`.
+
+```js
+let sourceCode = `import {html, css, LitElement} from "lit";`;
+let it = new ImportTransformer(sourceCode);
+it.hasImports(); // true
+```
+
+```js
+let sourceCode = `const {html, css, LitElement} = require("lit");`;
+let it = new ImportTransformer(sourceCode);
+it.hasImports(); // false
+```
+
 
 ## Installation
 

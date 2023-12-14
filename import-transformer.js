@@ -117,4 +117,14 @@ export class ImportTransformer {
 
     return input;
   }
+
+  hasImports() {
+    for(let node of this.ast.body) {
+      if(node.type === "ImportDeclaration") {
+        return true;
+      }
+    }
+
+    return false;
+  }
 }

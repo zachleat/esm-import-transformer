@@ -201,3 +201,17 @@ const noop2 = require("@zachleat/noop");`;
 
   t.is(tf.transformToRequire(), after);
 });
+
+test("Test if has imports (using import)", t => {
+  let code = `import {html, css, LitElement} from "lit";`;
+  let tf = new ImportTransformer(code);
+
+  t.is(tf.hasImports(), true);
+});
+
+test("Test if has imports (using require)", t => {
+  let code = `const {html, css, LitElement} = require("lit");`;
+  let tf = new ImportTransformer(code);
+
+  t.is(tf.hasImports(), false);
+});
