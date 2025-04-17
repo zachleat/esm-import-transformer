@@ -1,6 +1,6 @@
 {
   "name": "esm-import-transformer",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "description": "Perform transformations on ESM import syntax (using import maps or to a dynamic import).",
   "type": "module",
   "main": "./import-transformer.js",
