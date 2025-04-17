@@ -40,15 +40,18 @@ export class ImportTransformer {
 
   static transformImportCode(prefix, str, node, specifiers, sourceNode, indexOffset = 0) {
     let { start, end } = node;
+    let endOffset = end - sourceNode.end;
+
     start += indexOffset;
     end += indexOffset;
 
     let { raw: rawSourceValue } = sourceNode;
-
-    let importDeclaration = str.slice(start, end - 1);
+    let importDeclaration = str.slice(start, end);
 
     let specifierIndexes = [];
-    if(importDeclaration.startsWith("import ")) {
+    if(importDeclaration.startsWith("import * as ")) {
+      specifierIndexes[0] = "import * as ".length + start;
+    } else if(importDeclaration.startsWith("import ")) {
       specifierIndexes[0] = "import ".length + start;
     } else {
       throw new Error(`Could not find \`import\` in import declaration: ${importDeclaration}`);
@@ -63,7 +66,7 @@ export class ImportTransformer {
     }
 
     let newImportString = `const ${str.slice(specifierIndexes[0], specifierIndexes[1])} = ${prefix}(${rawSourceValue})`;
-    let returnedCode = str.slice(0, start) + newImportString + str.slice(end - 1);
+    let returnedCode = str.slice(0, start) + newImportString + str.slice(end - endOffset);
 
     return {
       code: returnedCode,

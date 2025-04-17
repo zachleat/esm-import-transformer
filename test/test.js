@@ -149,12 +149,11 @@ test.skip("Change to dynamic import with alias", t => {
   t.is(tf.transformToDynamicImport(), after);
 });
 
-// TODO
-test.skip("Change to dynamic import with namespace", t => {
+test("Change to dynamic import with namespace", t => {
   let before = `import * as name from "my-module.js";`;
   let tf = new ImportTransformer(before);
 
-  let after = `/* TODO */`;
+  let after = `const name = await import("my-module.js");`;
 
   t.is(tf.transformToDynamicImport(), after);
 });
@@ -214,4 +213,31 @@ test("Test if has imports (using require)", t => {
   let tf = new ImportTransformer(code);
 
   t.is(tf.hasImports(), false);
+});
+
+test("Change to require (default, translated)", t => {
+  let before = `import * as fetch from "@11ty/eleventy-fetch";`;
+  let tf = new ImportTransformer(before);
+
+  let after = `const fetch = require("@11ty/eleventy-fetch");`;
+
+  t.is(tf.transformToRequire(), after);
+});
+
+test("Change to require (sass default, translated)", t => {
+  let before = `import * as sass from "sass"`;
+  let tf = new ImportTransformer(before);
+
+  let after = `const sass = require("sass")`;
+
+  t.is(tf.transformToRequire(), after);
+});
+
+test("Change to require extra semis (sass default, translated)", t => {
+  let before = `import * as sass from "sass";;;    `;
+  let tf = new ImportTransformer(before);
+
+  let after = `const sass = require("sass");;;    `;
+
+  t.is(tf.transformToRequire(), after);
 });
