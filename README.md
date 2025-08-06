@@ -55,7 +55,7 @@ let outputCode = it.transformToDynamicImport();
 
 ### Transform to `require()`
 
-_Added in v3.0.1_: This method does not require that the downstream package is CommonJS, but just know that code will fail if you try to run it on a package that is not CommonJS.
+_Added in v3.0.1_: This method does _not_ require that the downstream package is CommonJS, but remember that _running_ the resulting code will fail if you try to `require` an ESM package (in some JavaScript environments, e.g. Node < 20).
 
 ```js
 let sourceCode = `import {html, css, LitElement} from "lit";`;
