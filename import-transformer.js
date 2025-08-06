@@ -1,4 +1,8 @@
-import * as acorn from "acorn";
+import { parse } from "acorn";
+
+const COMMENT_START = "/* ";
+const COMMENT_END = " */";
+const EXPORT_STR = "export ";
 
 export class ImportTransformer {
   constructor(input, ast) {
@@ -15,11 +19,55 @@ export class ImportTransformer {
     if(ast) {
       this.ast = ast;
     } else {
-      this.ast = acorn.parse(input, {
+      this.ast = parse(input, {
         sourceType: "module",
         ecmaVersion: "latest"
       });
     }
+
+    this.imports = new Set();
+    this.exports = new Set();
+  }
+
+  static commentNode(str, sourceNode, indexOffset = 0) {
+    let { start, end } = sourceNode;
+    let statement = str.slice(start + indexOffset, end + indexOffset);
+    return {
+      statement,
+      code: `${str.slice(0, start + indexOffset)}${COMMENT_START}${statement}${COMMENT_END}${str.slice(end + indexOffset)}`,
+      offset: COMMENT_START.length + COMMENT_END.length,
+    };
+  }
+
+  static commentExportDeclarationOnly(str, sourceNode, indexOffset = 0) {
+    let { start, end } = sourceNode;
+    let statement = str.slice(start + indexOffset, end + indexOffset);
+    let functionDeclarationName = sourceNode.declaration?.id?.name;
+    let variableIdentifierNames = (sourceNode.declaration?.declarations || []).map(node => {
+      if(node.id.properties) {
+        return node.id.properties.map(node => node.key.name)
+      } else if(node.id.name) {
+        return node.id.name;
+      }
+
+      throw new Error("Could not find variable identifier in declaration for: " + statement);
+    }).flat();
+
+    let reuseStatement;
+    // change `export const a = 1;` to `export { a };` for reuse
+    if(functionDeclarationName || variableIdentifierNames.length > 0) {
+      reuseStatement = `export { ${functionDeclarationName || variableIdentifierNames.join(", ") } };`;
+    } else {
+      throw new Error("Couldn’t find identifier name for: " + statement);
+    }
+
+    // -1 there removes the double space between `export ` and ` */`
+    let commented = `${COMMENT_START}${EXPORT_STR.slice(0, -1)}${COMMENT_END}${statement.slice(EXPORT_STR.length)}`
+    return {
+      statement: reuseStatement,
+      code: `${str.slice(0, start + indexOffset)}${commented}${str.slice(end + indexOffset)}`,
+      offset: COMMENT_START.length + COMMENT_END.length - 1, // -1 removes the double space between `export ` and ` */`
+    };
   }
 
   static transformImportSource(str, sourceNode, indexOffset = 0, importMap = {}) {
@@ -28,7 +76,7 @@ export class ImportTransformer {
     let resolved = importMap?.imports && importMap?.imports[value];
     if(resolved) {
       return {
-        code: str.slice(0, start + 1 + indexOffset) + resolved + str.slice(end - 1 + indexOffset),
+        code: `${str.slice(0, start + 1 + indexOffset)}${resolved}${str.slice(end - 1 + indexOffset)}`,
         offset: resolved.length - value.length,
       };
     }
@@ -99,6 +147,41 @@ export class ImportTransformer {
   // alias for backwards compat
   transform(...args) {
     return this.transformWithImportMap(...args);
+  }
+
+  transformRemoveImportExports() {
+    let input = this.originalSource;
+    let indexOffset = 0;
+    for(let node of this.ast.body) {
+      if(node.type === "ImportDeclaration") {
+        let ret = ImportTransformer.commentNode(input, node, indexOffset);
+        input = ret.code;
+        indexOffset += ret.offset;
+        this.imports.add(ret.statement);
+      } else if(node.type?.startsWith("Export")) {
+        let ret;
+        // comment out `export { name }` and `export default`
+        if(node.type === "ExportNamedDeclaration" && node.specifiers.length > 0 || node.type === "ExportDefaultDeclaration") {
+          ret = ImportTransformer.commentNode(input, node, indexOffset);
+        } else {
+          // just comment out start `export ` from the beginning of `export const` or `export function`
+          ret = ImportTransformer.commentExportDeclarationOnly(input, node, indexOffset);
+        }
+
+        input = ret.code;
+        indexOffset += ret.offset;
+        this.exports.add(ret.statement);
+      }
+    }
+
+    return input;
+  }
+
+  getImportsAndExports() {
+    return {
+      imports: this.imports,
+      exports: this.exports,
+    };
   }
 
   transformWithImportMap(importMap) {

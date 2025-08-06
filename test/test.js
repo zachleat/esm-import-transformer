@@ -241,3 +241,120 @@ test("Change to require extra semis (sass default, translated)", t => {
 
   t.is(tf.transformToRequire(), after);
 });
+
+test("Strip imports and exports", t => {
+  let code = `/*before */import {html, css, LitElement} from "lit";/* middle */import somethingelse from "no";/* after */const b = 1;const c = 1;export const a = 1;/* end */`;
+  let tf = new ImportTransformer(code);
+
+  t.is(tf.transformRemoveImportExports(), `/*before *//* import {html, css, LitElement} from "lit"; *//* middle *//* import somethingelse from "no"; *//* after */const b = 1;const c = 1;/* export */const a = 1;/* end */`);
+
+  let { imports, exports } = tf.getImportsAndExports();
+  t.deepEqual(imports, new Set([
+    `import {html, css, LitElement} from "lit";`,
+    `import somethingelse from "no";`,
+  ]));
+  t.deepEqual(exports, new Set([
+    "export { a };",
+  ]));
+});
+
+test("Strip imports and exports (sass default)", t => {
+  let code = `/*before */import * as sass from "sass";/* after */const b = 1;export const c = 1;export const a = 1;/* end */`;
+  let tf = new ImportTransformer(code);
+
+  t.is(tf.transformRemoveImportExports(), `/*before *//* import * as sass from "sass"; *//* after */const b = 1;/* export */const c = 1;/* export */const a = 1;/* end */`);
+
+  let { imports, exports } = tf.getImportsAndExports();
+  t.deepEqual(imports, new Set([
+    `import * as sass from "sass";`,
+  ]));
+  t.deepEqual(exports, new Set([
+    "export { c };",
+    "export { a };",
+  ]));
+});
+
+test("Strip named exports", t => {
+  let code = `/* start */const b = 1;const a = 1;export { b, a };/* end */`;
+  let tf = new ImportTransformer(code);
+
+  t.is(tf.transformRemoveImportExports(), `/* start */const b = 1;const a = 1;/* export { b, a }; *//* end */`);
+
+  let { imports, exports } = tf.getImportsAndExports();
+  t.deepEqual(imports, new Set());
+  t.deepEqual(exports, new Set(["export { b, a };"]));
+});
+
+test("Strip default exports", t => {
+  let code = `/* start */const b = 1;const a = 1;export default b;/* end */`;
+  let tf = new ImportTransformer(code);
+
+  t.is(tf.transformRemoveImportExports(), `/* start */const b = 1;const a = 1;/* export default b; *//* end */`);
+
+  let { imports, exports } = tf.getImportsAndExports();
+  t.deepEqual(imports, new Set());
+  t.deepEqual(exports, new Set(["export default b;"]));
+});
+
+test("Strip named export function", t => {
+  let code = `/* start */export function testing() {}/* end */`;
+  let tf = new ImportTransformer(code);
+
+  t.is(tf.transformRemoveImportExports(), `/* start *//* export */function testing() {}/* end */`);
+
+  let { imports, exports } = tf.getImportsAndExports();
+  t.deepEqual(imports, new Set());
+  t.deepEqual(exports, new Set(["export { testing };"]));
+});
+
+test("export default as", t => {
+  let code = `/* start */export { default as name1 } from "module-name";/* end */`;
+  let tf = new ImportTransformer(code);
+
+  t.is(tf.transformRemoveImportExports(), `/* start *//* export { default as name1 } from "module-name"; *//* end */`);
+
+  let { imports, exports } = tf.getImportsAndExports();
+  t.deepEqual(imports, new Set());
+  t.deepEqual(exports, new Set([
+    `export { default as name1 } from "module-name";`
+  ]));
+});
+
+test("export lets", t => {
+  let code = `/* start */export let name1, name2/* end */`;
+  let tf = new ImportTransformer(code);
+
+  t.is(tf.transformRemoveImportExports(), `/* start *//* export */let name1, name2/* end */`);
+
+  let { imports, exports } = tf.getImportsAndExports();
+  t.deepEqual(imports, new Set());
+  t.deepEqual(exports, new Set([
+    `export { name1, name2 };`,
+  ]));
+});
+
+test("export const with values", t => {
+  let code = `/* start */export const name1 = 1, name2 = 2/* end */`;
+  let tf = new ImportTransformer(code);
+
+  t.is(tf.transformRemoveImportExports(), `/* start *//* export */const name1 = 1, name2 = 2/* end */`);
+
+  let { imports, exports } = tf.getImportsAndExports();
+  t.deepEqual(imports, new Set());
+  t.deepEqual(exports, new Set([
+    `export { name1, name2 };`,
+  ]));
+});
+
+test("export const with values (destructuring reassignment)", t => {
+  let code = `/* start */export const { name1, name2: bar } = o;/* end */`;
+  let tf = new ImportTransformer(code);
+
+  t.is(tf.transformRemoveImportExports(), `/* start *//* export */const { name1, name2: bar } = o;/* end */`);
+
+  let { imports, exports } = tf.getImportsAndExports();
+  t.deepEqual(imports, new Set());
+  t.deepEqual(exports, new Set([
+    `export { name1, name2 };`,
+  ]));
+});
