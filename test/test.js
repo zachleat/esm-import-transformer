@@ -248,7 +248,7 @@ test("Strip imports and exports", t => {
 
   t.is(tf.transformRemoveImportExports(), `/*before *//* import {html, css, LitElement} from "lit"; *//* middle *//* import somethingelse from "no"; *//* after */const b = 1;const c = 1;/* export */const a = 1;/* end */`);
 
-  let { imports, exports } = tf.getImportsAndExports();
+  let { imports, exports, namedExports } = tf.getImportsAndExports();
   t.deepEqual(imports, new Set([
     `import {html, css, LitElement} from "lit";`,
     `import somethingelse from "no";`,
@@ -256,6 +256,7 @@ test("Strip imports and exports", t => {
   t.deepEqual(exports, new Set([
     "export { a };",
   ]));
+  t.deepEqual(namedExports, new Set(["a"]));
 });
 
 test("Strip imports and exports (sass default)", t => {
@@ -264,7 +265,7 @@ test("Strip imports and exports (sass default)", t => {
 
   t.is(tf.transformRemoveImportExports(), `/*before *//* import * as sass from "sass"; *//* after */const b = 1;/* export */const c = 1;/* export */const a = 1;/* end */`);
 
-  let { imports, exports } = tf.getImportsAndExports();
+  let { imports, exports, namedExports } = tf.getImportsAndExports();
   t.deepEqual(imports, new Set([
     `import * as sass from "sass";`,
   ]));
@@ -272,6 +273,7 @@ test("Strip imports and exports (sass default)", t => {
     "export { c };",
     "export { a };",
   ]));
+  t.deepEqual(namedExports, new Set(["c", "a"]));
 });
 
 test("Strip named exports", t => {
@@ -280,9 +282,10 @@ test("Strip named exports", t => {
 
   t.is(tf.transformRemoveImportExports(), `/* start */const b = 1;const a = 1;/* export { b, a }; *//* end */`);
 
-  let { imports, exports } = tf.getImportsAndExports();
+  let { imports, exports, namedExports } = tf.getImportsAndExports();
   t.deepEqual(imports, new Set());
   t.deepEqual(exports, new Set(["export { b, a };"]));
+  t.deepEqual(namedExports, new Set(["b", "a"]));
 });
 
 test("Strip default exports", t => {
@@ -291,9 +294,10 @@ test("Strip default exports", t => {
 
   t.is(tf.transformRemoveImportExports(), `/* start */const b = 1;const a = 1;/* export default b; *//* end */`);
 
-  let { imports, exports } = tf.getImportsAndExports();
+  let { imports, exports, namedExports } = tf.getImportsAndExports();
   t.deepEqual(imports, new Set());
   t.deepEqual(exports, new Set(["export default b;"]));
+  t.deepEqual(namedExports, new Set(["default"]));
 });
 
 test("Strip named export function", t => {
@@ -302,9 +306,10 @@ test("Strip named export function", t => {
 
   t.is(tf.transformRemoveImportExports(), `/* start *//* export */function testing() {}/* end */`);
 
-  let { imports, exports } = tf.getImportsAndExports();
+  let { imports, exports, namedExports } = tf.getImportsAndExports();
   t.deepEqual(imports, new Set());
   t.deepEqual(exports, new Set(["export { testing };"]));
+  t.deepEqual(namedExports, new Set(["testing"]));
 });
 
 test("export default as", t => {
@@ -313,11 +318,12 @@ test("export default as", t => {
 
   t.is(tf.transformRemoveImportExports(), `/* start *//* export { default as name1 } from "module-name"; *//* end */`);
 
-  let { imports, exports } = tf.getImportsAndExports();
+  let { imports, exports, namedExports } = tf.getImportsAndExports();
   t.deepEqual(imports, new Set());
   t.deepEqual(exports, new Set([
     `export { default as name1 } from "module-name";`
   ]));
+  t.deepEqual(namedExports, new Set(["name1"]));
 });
 
 test("export lets", t => {
@@ -326,8 +332,9 @@ test("export lets", t => {
 
   t.is(tf.transformRemoveImportExports(), `/* start *//* export */let name1, name2/* end */`);
 
-  let { imports, exports } = tf.getImportsAndExports();
+  let { imports, exports, namedExports } = tf.getImportsAndExports();
   t.deepEqual(imports, new Set());
+  t.deepEqual(namedExports, new Set(["name1", "name2"]));
   t.deepEqual(exports, new Set([
     `export { name1, name2 };`,
   ]));

@@ -27,6 +27,7 @@ export class ImportTransformer {
 
     this.imports = new Set();
     this.exports = new Set();
+    this.namedExports = new Set();
   }
 
   static commentNode(str, sourceNode, indexOffset = 0) {
@@ -42,6 +43,7 @@ export class ImportTransformer {
   static commentExportDeclarationOnly(str, sourceNode, indexOffset = 0) {
     let { start, end } = sourceNode;
     let statement = str.slice(start + indexOffset, end + indexOffset);
+
     let functionDeclarationName = sourceNode.declaration?.id?.name;
     let variableIdentifierNames = (sourceNode.declaration?.declarations || []).map(node => {
       if(node.id.properties) {
@@ -65,6 +67,7 @@ export class ImportTransformer {
     let commented = `${COMMENT_START}${EXPORT_STR.slice(0, -1)}${COMMENT_END}${statement.slice(EXPORT_STR.length)}`
     return {
       statement: reuseStatement,
+      namedExports: functionDeclarationName ? [functionDeclarationName] : variableIdentifierNames,
       code: `${str.slice(0, start + indexOffset)}${commented}${str.slice(end + indexOffset)}`,
       offset: COMMENT_START.length + COMMENT_END.length - 1, // -1 removes the double space between `export ` and ` */`
     };
@@ -163,9 +166,21 @@ export class ImportTransformer {
         // comment out `export { name }` and `export default`
         if(node.type === "ExportNamedDeclaration" && node.specifiers.length > 0 || node.type === "ExportDefaultDeclaration") {
           ret = ImportTransformer.commentNode(input, node, indexOffset);
+          if(node.type === "ExportDefaultDeclaration") {
+            this.namedExports.add("default");
+          } else {
+            for(let specifierNode of node.specifiers || []) {
+              if(specifierNode?.exported?.name) {
+                this.namedExports.add(specifierNode.exported.name);
+              }
+            }
+          }
         } else {
           // just comment out start `export ` from the beginning of `export const` or `export function`
           ret = ImportTransformer.commentExportDeclarationOnly(input, node, indexOffset);
+          for(let name of ret.namedExports) {
+            this.namedExports.add(name);
+          }
         }
 
         input = ret.code;
@@ -181,6 +196,7 @@ export class ImportTransformer {
     return {
       imports: this.imports,
       exports: this.exports,
+      namedExports: this.namedExports,
     };
   }
 
