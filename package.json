@@ -4,23 +4,22 @@
   "description": "Perform transformations on ESM import syntax (using import maps or to a dynamic import).",
   "type": "module",
   "main": "./import-transformer.js",
+  "files": [
+    "import-transformer.js"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/zachleat/esm-import-transformer.git"
   },
-  "author": {
-    "name": "Zach Leatherman",
-    "email": "zachleatherman@gmail.com",
-    "url": "https://zachleat.com/"
-  },
+  "author": "Zach Leatherman (https://zachleat.com/)",
   "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
-    "test": "npx ava"
+    "test": "node --test"
   },
   "dependencies": {
     "acorn": "^8.15.0"
-  },
-  "devDependencies": {
-    "ava": "^6.4.1"
   }
 }
