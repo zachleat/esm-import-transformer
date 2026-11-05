@@ -352,6 +352,21 @@ test("export namespace from", t => {
   t.deepEqual(exportBindings, new Map([["ns", "ns"]]));
 });
 
+test("export star from", t => {
+  let code = `export * from "a";export * from "b";`;
+  let tf = new ImportTransformer(code);
+
+  t.is(tf.transformRemoveImportExports(), `/* export * from "a"; *//* export * from "b"; */`);
+
+  let { imports, namedExports, exportStars } = tf.getImportsAndExports();
+  t.deepEqual(imports, new Set([
+    `import * as __exportStar0 from "a";`,
+    `import * as __exportStar1 from "b";`,
+  ]));
+  t.deepEqual(namedExports, new Set());
+  t.deepEqual(exportStars, new Set(["__exportStar0", "__exportStar1"]));
+});
+
 test("Import map applies to export from", t => {
   let tf = new ImportTransformer(`export { a } from "module-name";export * from "module-name";`);
 

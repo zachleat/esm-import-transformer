@@ -30,6 +30,8 @@ export class ImportTransformer {
     this.namedExports = new Set();
     // Exported name to local binding name
     this.exportBindings = new Map();
+    // Local namespace names for `export * from`
+    this.exportStars = new Set();
   }
 
   static commentNode(str, sourceNode, indexOffset = 0) {
@@ -194,6 +196,11 @@ export class ImportTransformer {
           this.namedExports.add(node.exported.name);
           this.imports.add(`import * as ${node.exported.name} from ${node.source.raw};`);
           this.exportBindings.set(node.exported.name, node.exported.name);
+        } else if(node.type === "ExportAllDeclaration") {
+          ret = ImportTransformer.commentNode(input, node, indexOffset);
+          let local = `__exportStar${this.exportStars.size}`;
+          this.imports.add(`import * as ${local} from ${node.source.raw};`);
+          this.exportStars.add(local);
         } else {
           // just comment out start `export ` from the beginning of `export const` or `export function`
           ret = ImportTransformer.commentExportDeclarationOnly(input, node, indexOffset);
@@ -218,6 +225,7 @@ export class ImportTransformer {
       exports: this.exports,
       namedExports: this.namedExports,
       exportBindings: this.exportBindings,
+      exportStars: this.exportStars,
     };
   }
 
