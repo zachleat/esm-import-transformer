@@ -93,6 +93,13 @@ export class ImportTransformer {
     };
   }
 
+  static aliasToDestructure(specifierCode) {
+    if(!specifierCode.startsWith("{")) {
+      return specifierCode;
+    }
+    return specifierCode.replace(/\s+as\s+/g, ": ");
+  }
+
   static transformImportCode(prefix, str, node, specifiers, sourceNode, indexOffset = 0) {
     let { start, end } = node;
     let endOffset = end - sourceNode.end;
@@ -120,7 +127,16 @@ export class ImportTransformer {
       specifierIndexes[1] += split[0].length;
     }
 
-    let newImportString = `const ${str.slice(specifierIndexes[0], specifierIndexes[1])} = ${prefix}(${rawSourceValue})`;
+    let newImportString;
+    let [firstSpecifier] = specifiers;
+    if(firstSpecifier.type === "ImportDefaultSpecifier" && specifiers.length > 1) {
+      // Default import binds the whole module (as with single default imports), the rest destructure from it.
+      let defaultName = firstSpecifier.local.name;
+      let rest = str.slice(firstSpecifier.end + indexOffset, specifierIndexes[1]).replace(/^\s*,\s*/, "").replace(/^\*\s+as\s+/, "");
+      newImportString = `const ${defaultName} = ${prefix}(${rawSourceValue});const ${ImportTransformer.aliasToDestructure(rest)} = ${defaultName}`;
+    } else {
+      newImportString = `const ${ImportTransformer.aliasToDestructure(str.slice(specifierIndexes[0], specifierIndexes[1]))} = ${prefix}(${rawSourceValue})`;
+    }
     let returnedCode = str.slice(0, start) + newImportString + str.slice(end - endOffset);
 
     return {

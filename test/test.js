@@ -130,18 +130,16 @@ const noop2 = await import("@zachleat/noop");`;
   assert.equal(tf.transformToDynamicImport(), after);
 });
 
-// TODO
-test.skip("Change to dynamic import, multiple types", () => {
+test("Change to dynamic import, multiple types", () => {
   let before = `import myDefault, { myModule } from "/modules/my-module.js";`;
   let tf = new ImportTransformer(before);
 
-  let after = `const myDefault = await import("my-module.js");const { myModule } = myDefault;`;
+  let after = `const myDefault = await import("/modules/my-module.js");const { myModule } = myDefault;`;
 
   assert.equal(tf.transformToDynamicImport(), after);
 });
 
-// TODO
-test.skip("Change to dynamic import with alias", () => {
+test("Change to dynamic import with alias", () => {
   let before = `import { reallyReallyLongModuleExportName as shortName } from "my-module.js";`;
   let tf = new ImportTransformer(before);
 
