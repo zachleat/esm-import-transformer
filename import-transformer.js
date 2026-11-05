@@ -28,6 +28,8 @@ export class ImportTransformer {
     this.imports = new Set();
     this.exports = new Set();
     this.namedExports = new Set();
+    // Exported name to local binding name
+    this.exportBindings = new Map();
   }
 
   static commentNode(str, sourceNode, indexOffset = 0) {
@@ -170,16 +172,34 @@ export class ImportTransformer {
             this.namedExports.add("default");
           } else {
             for(let specifierNode of node.specifiers || []) {
-              if(specifierNode?.exported?.name) {
-                this.namedExports.add(specifierNode.exported.name);
+              let exported = specifierNode?.exported?.name;
+              if(!exported) {
+                continue;
+              }
+              this.namedExports.add(exported);
+
+              if(node.source) {
+                // Hoist re-exports as imports so the exported name is bound locally.
+                if(exported !== "default") {
+                  this.imports.add(`import { ${specifierNode.local.name} as ${exported} } from ${node.source.raw};`);
+                  this.exportBindings.set(exported, exported);
+                }
+              } else {
+                this.exportBindings.set(exported, specifierNode.local.name);
               }
             }
           }
+        } else if(node.type === "ExportAllDeclaration" && node.exported?.name) {
+          ret = ImportTransformer.commentNode(input, node, indexOffset);
+          this.namedExports.add(node.exported.name);
+          this.imports.add(`import * as ${node.exported.name} from ${node.source.raw};`);
+          this.exportBindings.set(node.exported.name, node.exported.name);
         } else {
           // just comment out start `export ` from the beginning of `export const` or `export function`
           ret = ImportTransformer.commentExportDeclarationOnly(input, node, indexOffset);
           for(let name of ret.namedExports) {
             this.namedExports.add(name);
+            this.exportBindings.set(name, name);
           }
         }
 
@@ -197,6 +217,7 @@ export class ImportTransformer {
       imports: this.imports,
       exports: this.exports,
       namedExports: this.namedExports,
+      exportBindings: this.exportBindings,
     };
   }
 
@@ -208,7 +229,7 @@ export class ImportTransformer {
     let input = this.originalSource;
     let indexOffset = 0;
     for(let node of this.ast.body) {
-      if(node.type === "ImportDeclaration") {
+      if(node.type === "ImportDeclaration" || node.source && node.type?.startsWith("Export")) {
         if(importMap?.imports) {
           let ret = ImportTransformer.transformImportSource(input, node.source, indexOffset, importMap);
           input = ret.code;

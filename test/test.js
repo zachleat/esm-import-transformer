@@ -318,12 +318,48 @@ test("export default as", t => {
 
   t.is(tf.transformRemoveImportExports(), `/* start *//* export { default as name1 } from "module-name"; *//* end */`);
 
-  let { imports, exports, namedExports } = tf.getImportsAndExports();
-  t.deepEqual(imports, new Set());
+  let { imports, exports, namedExports, exportBindings } = tf.getImportsAndExports();
+  t.deepEqual(imports, new Set([
+    `import { default as name1 } from "module-name";`
+  ]));
   t.deepEqual(exports, new Set([
     `export { default as name1 } from "module-name";`
   ]));
   t.deepEqual(namedExports, new Set(["name1"]));
+  t.deepEqual(exportBindings, new Map([["name1", "name1"]]));
+});
+
+test("export alias", t => {
+  let code = `const a = 1;export { a as b, a };`;
+  let tf = new ImportTransformer(code);
+
+  t.is(tf.transformRemoveImportExports(), `const a = 1;/* export { a as b, a }; */`);
+
+  let { namedExports, exportBindings } = tf.getImportsAndExports();
+  t.deepEqual(namedExports, new Set(["b", "a"]));
+  t.deepEqual(exportBindings, new Map([["b", "a"], ["a", "a"]]));
+});
+
+test("export namespace from", t => {
+  let code = `export * as ns from "module-name";`;
+  let tf = new ImportTransformer(code);
+
+  t.is(tf.transformRemoveImportExports(), `/* export * as ns from "module-name"; */`);
+
+  let { imports, namedExports, exportBindings } = tf.getImportsAndExports();
+  t.deepEqual(imports, new Set([`import * as ns from "module-name";`]));
+  t.deepEqual(namedExports, new Set(["ns"]));
+  t.deepEqual(exportBindings, new Map([["ns", "ns"]]));
+});
+
+test("Import map applies to export from", t => {
+  let tf = new ImportTransformer(`export { a } from "module-name";export * from "module-name";`);
+
+  t.is(tf.transformWithImportMap({
+    imports: {
+      "module-name": "./mapped.js"
+    }
+  }), `export { a } from "./mapped.js";export * from "./mapped.js";`);
 });
 
 test("export lets", t => {
